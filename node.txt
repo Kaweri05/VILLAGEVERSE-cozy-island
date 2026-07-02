@@ -1,0 +1,41 @@
+VillageVerse — Node.js Environment Requirements
+================================================
+
+Required:
+  Node.js:  v18.17 or later (Next.js 14 minimum requirement)
+  npm:      v9 or later (ships with Node 18+)
+
+Recommended:
+  Node.js:  v20 LTS
+  npm:      v10
+
+Check your installed versions:
+  node -v
+  npm -v
+
+Frontend dependencies (see frontend/package.json for exact versions):
+  next             14.2.5
+  react            18.3.1
+  react-dom        18.3.1
+  framer-motion    ^11.0.0
+  axios            ^1.5.1
+
+Frontend dev dependencies:
+  typescript       ^5.6.2
+  tailwindcss      ^3.4.4
+  eslint           ^8.57.0
+  eslint-config-next 14.2.5
+  postcss          ^8.4.44
+  autoprefixer     ^10.4.20
+  @types/node      ^20.14.2
+  @types/react     ^18.3.3
+  @types/react-dom ^18.3.0
+
+Install all dependencies:
+  cd frontend
+  npm install
+
+Known issue:
+  tsconfig.json must NOT include "ignoreDeprecations": "6.0" —
+  this value is not recognized by TypeScript ^5.6.2 and will fail
+  the build with: "Type error: Invalid value for '--ignoreDeprecations'."

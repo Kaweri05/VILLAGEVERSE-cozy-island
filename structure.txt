@@ -1,0 +1,77 @@
+VillageVerse — Full Project Structure
+======================================
+
+VillageVerse/
+├── .env
+├── .gitignore
+├── .github/
+├── .vscode/
+├── README.md
+├── IslandLife_AI_README.md
+├── docker-compose.yml
+├── vercel.json
+│
+├── frontend/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── next.config.js
+│   ├── next-env.d.ts
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   ├── node_modules/            (ignored by git)
+│   └── src/
+│       ├── pages/
+│       │   ├── _app.tsx         # Wraps app in ThemeProvider + Layout
+│       │   ├── _document.tsx    # Standard Next.js document shell
+│       │   ├── index.tsx        # Home page
+│       │   ├── shop.tsx         # Shop — live catalog, buy, preview, theme filter
+│       │   ├── inventory.tsx    # Inventory (static preview)
+│       │   ├── quests.tsx       # Quests (static preview)
+│       │   └── admin.tsx        # Admin dashboard (static preview)
+│       │
+│       ├── components/
+│       │   ├── Layout.tsx       # Header, nav, theme picker, footer
+│       │   ├── IslandScene.tsx  # Animated hero island illustration
+│       │   ├── FeatureCard.tsx  # Reusable feature highlight card
+│       │   └── SectionCard.tsx  # Reusable section wrapper
+│       │
+│       ├── context/
+│       │   └── ThemeContext.tsx # Day/Night/Pirate theme state + persistence
+│       │
+│       ├── hooks/
+│       │   └── useSwipeNavigation.ts  # Mobile swipe-to-navigate between pages
+│       │
+│       ├── data/
+│       │   └── mockData.ts      # Shop/inventory/villager placeholder data
+│       │
+│       └── styles/
+│           └── globals.css      # Tailwind base + global styles
+│
+└── backend/
+    ├── requirements.txt
+    ├── Dockerfile
+    ├── alembic/                 # DB migration scaffolding
+    ├── alembic.ini
+    └── villageverse-backend/    # Active, running backend project
+        ├── .env                 # DATABASE_URL, JWT_SECRET, etc. (not committed)
+        ├── requirements.txt
+        ├── villageverse.db      # Local SQLite dev database (ignored by git)
+        └── app/
+            ├── main.py          # FastAPI app entrypoint, CORS, startup hook
+            │
+            ├── api/
+            │   ├── api_router.py  # Combines all sub-routers under /api
+            │   ├── game.py        # Daily login reward endpoints
+            │   ├── camp.py        # Pirate camp: gather resources, upgrade level
+            │   └── shop.py        # Shop catalog, buy, owned-items endpoints
+            │
+            ├── core/
+            │   └── config.py      # Pydantic Settings (reads .env)
+            │
+            ├── db/
+            │   └── database.py    # Async SQLAlchemy engine + session factory
+            │
+            └── models/
+                ├── base.py        # SQLAlchemy declarative Base
+                └── game_models.py # Player, DailyReward, PlayerCamp, PlayerInventoryItem
