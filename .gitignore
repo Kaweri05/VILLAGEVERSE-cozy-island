@@ -1,0 +1,33 @@
+# Node / frontend
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Python / backend
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.db
+
+# Editor/OS
+.vscode/
+.DS_Store
+EOFcat > .gitignore << 'EOF'
+# Node / frontend
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Python / backend
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.db
+
+# Editor/OS
+.vscode/
+.DS_Store
+.env
+backend/villageverse-backend/.env
