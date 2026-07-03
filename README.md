@@ -10,9 +10,10 @@
 
 ---
 
-## 🔗 Live Demo
+🔗 Live Demo
 
-> **[https://villageverse-cozy-island.vercel.app/](Live Demo)**
+
+https://villageverse-cozy-island.vercel.app/
 
 ---
 
