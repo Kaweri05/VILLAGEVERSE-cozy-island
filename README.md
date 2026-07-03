@@ -12,8 +12,7 @@
 
 ## 🔗 Live Demo
 
-> ⚠️ Add your deployed URL here once the Vercel build succeeds:
-> **[https://villageverse-cozy-island.vercel.app/](https://villageverse-cozy-island.vercel.app/)**
+> **[https://villageverse-cozy-island.vercel.app/](Live Demo)**
 
 ---
 
