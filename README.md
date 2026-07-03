@@ -1,88 +1,423 @@
-# 🏝️ VillageVerse
+# 🏝️ VillageVerse — Cozy Island Life Simulation
 
-VillageVerse is a cozy island-life simulation with a Next.js frontend and a FastAPI backend — featuring a shop with real coin-based purchases, a pirate camp resource/upgrade system, daily login rewards, and a switchable day/night/pirate theme system.
+> **Collect resources, run a pirate camp, shop for treasures, and build your own cozy island — with a live FastAPI backend and a Next.js frontend.**
+
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-async-teal?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-14.2.5-black?logo=next.js)](https://nextjs.org)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
+---
 
 ## 🔗 Live Demo
 
 > ⚠️ Add your deployed URL here once the Vercel build succeeds:
 > **[https://your-project-name.vercel.app](https://your-project-name.vercel.app)**
 
-## 🧱 Architecture Overview
+---
 
-```mermaid
-graph TB
-    A["🖥️ Frontend<br/>Next.js + React + Tailwind"] -->|REST calls| B["⚙️ FastAPI Backend<br/>app/main.py + api_router"]
-    B --> C["🎮 Game Modules<br/>Shop · Camp · Daily Rewards"]
-    C --> D["🗄️ Database<br/>PostgreSQL (prod) / SQLite (dev)"]
-    A --> E["🎨 Theme System<br/>Day · Night · Pirate Camp"]
-    B --> F["☁️ Deployment<br/>Vercel Services + Neon Postgres"]
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [System Architecture](#diagram-1--system-architecture)
+- [Shop Purchase Pipeline](#diagram-2--shop-purchase-pipeline)
+- [Frontend Page Routing](#diagram-3--frontend-page-routing)
+- [API Endpoint Map](#diagram-4--api-endpoint-map)
+- [Database Structure](#diagram-5--database-structure)
+- [Deployment Pipeline](#diagram-6--deployment-pipeline)
+- [User Guide Flowchart](#user-guide-flowchart)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [License](#license)
+
+---
+
+## Overview
+
+VillageVerse is a full-stack cozy island-life simulation. Players browse and buy items in a themed marketplace, gather resources at a pirate camp to upgrade it over time, and build a login streak for daily coin rewards — all backed by a real, persistent FastAPI + SQLAlchemy backend rather than mock data.
+
+---
+
+## Features
+
+| Feature | Description |
+|---|---|
+| 🛍️ **Live Shop** | 33-item catalog across 13 categories, real coin-based buying, item preview, theme filtering |
+| 🏕️ **Pirate Camp** | Gather wood/stone/cloth from resource nodes on cooldowns, spend them to upgrade camp level |
+| 🎁 **Daily Rewards** | Streak-based login rewards that grow the longer you keep your streak alive |
+| 🎨 **3 Themes** | Cozy Day, Starlight Night, Pirate Camp — switchable from a header menu, persisted per-browser |
+| 📱 **Swipe Navigation** | Mobile swipe-to-navigate between pages |
+| ⚡ **Async Backend** | FastAPI + SQLAlchemy async engine, rate-limited via SlowAPI |
+
+---
+
+## Diagram 1 — System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        USER'S BROWSER                           │
+│                                                                 │
+│  ┌──────────┐  ┌──────────────┐  ┌────────────┐  ┌─────────┐  │
+│  │  index   │  │   shop.tsx   │  │ Layout.tsx │  │ Theme   │  │
+│  │  .tsx    │  │ (buy/preview)│  │ (nav/theme)│  │ Context │  │
+│  └────┬─────┘  └──────┬───────┘  └────────────┘  └─────────┘  │
+│       │               │                                         │
+│       │         fetch() calls                                   │
+└───────┼───────────────┼─────────────────────────────────────────┘
+        │               │  HTTP / REST
+        ▼               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 FASTAPI BACKEND  (app/main.py)                   │
+│                                                                 │
+│  ┌────────────┐  ┌──────────────┐  ┌───────────────────────┐   │
+│  │CORS +      │  │api_router.py │  │  Rate limiting         │   │
+│  │startup hook│  │(combines all)│  │  (SlowAPI)             │   │
+│  └────────────┘  └──────┬───────┘  └────────────────────────┘   │
+│                         │                                       │
+│          ┌──────────────┼──────────────┐                        │
+│          ▼              ▼              ▼                        │
+│   ┌────────────┐ ┌────────────┐ ┌────────────┐                 │
+│   │  shop.py   │ │  camp.py   │ │  game.py   │                 │
+│   │ (catalog,  │ │ (gather,   │ │ (daily     │                 │
+│   │  buy)      │ │  upgrade)  │ │  reward)   │                 │
+│   └──────┬─────┘ └──────┬─────┘ └──────┬─────┘                 │
+│          └──────────────┼──────────────┘                        │
+│                         ▼                                       │
+│                  ┌─────────────┐                                │
+│                  │ database.py │  (async SQLAlchemy session)    │
+│                  └──────┬──────┘                                │
+└─────────────────────────┼───────────────────────────────────────┘
+                          ▼
+              ┌───────────────────────┐
+              │  PostgreSQL (prod)    │
+              │  SQLite (local dev)   │
+              └───────────────────────┘
 ```
 
-| Block | Responsibility |
-|---|---|
-| **Frontend** | Next.js pages (Home, Shop, Inventory, Quests, Admin), Tailwind styling, Framer Motion animation |
-| **FastAPI Backend** | Routes all `/api/*` requests, wires together the game modules |
-| **Game Modules** | Shop (catalog + buy), Camp (gather + upgrade), Daily Rewards (streaks) |
-| **Database** | SQLAlchemy async models; SQLite locally, PostgreSQL in production |
-| **Theme System** | React Context-driven picker (Cozy Day / Starlight Night / Pirate Camp), persisted per-browser |
-| **Deployment** | Vercel Services (`vercel.json`) routes `/` to the frontend and `/api/*` to the backend, backed by a hosted Postgres instance |
+---
 
-## 🛠️ Tech Stack
+## Diagram 2 — Shop Purchase Pipeline
 
-**Frontend:** Next.js 14, React 18, TypeScript, Tailwind CSS, Framer Motion
-**Backend:** FastAPI, SQLAlchemy (async), Pydantic Settings, SlowAPI (rate limiting)
-**Database:** PostgreSQL (production via Neon/Supabase) or SQLite (local dev)
-**Deployment:** Vercel (frontend + backend as unified Services project)
+```
+                    ┌─────────────────────┐
+                    │  Player browses shop │
+                    │  GET /shop/items     │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │  Click item card     │
+                    │  Preview modal opens │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │  Click "Buy"          │
+                    │  POST /shop/buy       │
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │  Look up player by   │
+                    │  username (or create)│
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │  coins >= price?     │
+                    └──────┬───────┬───────┘
+                        YES│       │NO
+                           │       ▼
+                           │  ┌─────────────────────┐
+                           │  │  400 error           │
+                           │  │  "Not enough coins"  │
+                           │  └─────────────────────┘
+                           ▼
+                    ┌─────────────────────┐
+                    │  Deduct coins         │
+                    │  player.coins -= price│
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │  Record ownership     │
+                    │  PlayerInventoryItem  │
+                    │  quantity += 1         │
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │  Commit to database    │
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │  JSON response →       │
+                    │  frontend updates coin │
+                    │  balance + "Owned" tag │
+                    └─────────────────────┘
+```
 
-## 📂 Project Structure
+---
+
+## Diagram 3 — Frontend Page Routing
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    _app.tsx  (Root wrapper)                     │
+│                                                                 │
+│   ┌─────────────────────────────────────────────────────────┐  │
+│   │  ThemeProvider  (context/ThemeContext.tsx)                │  │
+│   │  ┌───────────────────────────────────────────────────┐  │  │
+│   │  │  Layout.tsx                                         │  │  │
+│   │  │  ┌────────────┐   ┌───────────────────────────┐   │  │  │
+│   │  │  │ Header nav │   │ Theme picker (top right)  │   │  │  │
+│   │  │  └────────────┘   └───────────────────────────┘   │  │  │
+│   │  │                                                     │  │  │
+│   │  │   routed page content ▼                             │  │  │
+│   │  │  ┌─────┬──────┬───────────┬────────┬───────────┐  │  │  │
+│   │  │  │Home │ Shop │ Inventory │ Quests │  Admin    │  │  │  │
+│   │  │  │  /  │/shop │/inventory │/quests │  /admin   │  │  │  │
+│   │  │  └─────┴──────┴───────────┴────────┴───────────┘  │  │  │
+│   │  │                                                     │  │  │
+│   │  │  Bottom nav (mobile) + swipe navigation             │  │  │
+│   │  │  (useSwipeNavigation hook)                          │  │  │
+│   │  └───────────────────────────────────────────────────┘  │  │
+│   └─────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Diagram 4 — API Endpoint Map
+
+```
+/api
+ │
+ ├── /game
+ │    └── /daily-reward
+ │         ├── GET  /status    → current streak, claimable?
+ │         └── POST /claim     → award coins, extend streak
+ │
+ ├── /game/camp
+ │    ├── GET  /status         → camp level, resources, cooldowns
+ │    ├── POST /gather         → collect wood / stone / cloth
+ │    └── POST /upgrade        → spend resources, raise camp level
+ │
+ └── /game/shop
+      ├── GET  /items          → catalog (optional ?theme= filter)
+      ├── GET  /owned          → player's coin balance + owned items
+      └── POST /buy            → purchase an item, deduct coins
+```
+
+---
+
+## Diagram 5 — Database Structure
+
+```
+┌─────────────────────┐
+│       Player         │
+├─────────────────────┤
+│ id            PK     │
+│ username      unique │
+│ coins                │
+│ created_at            │
+└──────────┬───────────┘
+           │ 1
+           │
+     ┌─────┴──────────────┬──────────────────────┬─────────────────────┐
+     │ 1                  │ 1                     │ *                    │
+     ▼                    ▼                       ▼                      │
+┌─────────────────┐ ┌──────────────────┐ ┌───────────────────────────┐  │
+│  DailyReward     │ │   PlayerCamp      │ │  PlayerInventoryItem      │  │
+├─────────────────┤ ├──────────────────┤ ├───────────────────────────┤  │
+│ id           PK  │ │ id            PK │ │ id                    PK  │  │
+│ player_id    FK  │ │ player_id     FK │ │ player_id             FK  │  │
+│ streak           │ │ camp_level        │ │ item_id  (catalog ref)   │  │
+│ last_claimed_at  │ │ wood / stone      │ │ quantity                  │  │
+│                  │ │ cloth             │ │ purchased_at               │  │
+│                  │ │ last_gather (JSON)│ │                            │  │
+└─────────────────┘ └──────────────────┘ └───────────────────────────┘
+```
+
+---
+
+## Diagram 6 — Deployment Pipeline
+
+```
+┌─────────────┐    git push     ┌──────────────────┐
+│  Local repo  │───────────────▶│  GitHub           │
+│  (your PC)   │                │  main branch      │
+└─────────────┘                └─────────┬─────────┘
+                                          │ webhook
+                                          ▼
+                                ┌──────────────────────┐
+                                │  Vercel build         │
+                                │  reads vercel.json     │
+                                └──────────┬───────────┘
+                                           │
+                       ┌───────────────────┼────────────────────┐
+                       ▼                                        ▼
+           ┌───────────────────────┐                ┌───────────────────────┐
+           │  frontend service      │                │  backend service       │
+           │  root: frontend/       │                │  root: backend/        │
+           │  framework: nextjs     │                │  villageverse-backend/ │
+           │  → npm run build       │                │  framework: fastapi    │
+           └───────────┬───────────┘                └───────────┬───────────┘
+                       │                                        │
+              rewrites "/" here                    rewrites "/api/*" here
+                       │                                        │
+                       ▼                                        ▼
+           ┌───────────────────────┐                ┌───────────────────────┐
+           │   Public site           │                │  DATABASE_URL env var  │
+           │  your-app.vercel.app   │                │  → Neon / Supabase      │
+           └───────────────────────┘                │     PostgreSQL          │
+                                                      └───────────────────────┘
+```
+
+---
+
+## User Guide Flowchart
+
+```
+                        ┌─────────────────────┐
+                        │  Open the app         │
+                        │  localhost:3000        │
+                        └──────────┬──────────┘
+                                   │
+                        ┌──────────▼──────────┐
+                        │  What do you want    │
+                        │  to do?               │
+                        └──┬───────────────┬──┘
+                           │               │
+                  ┌────────▼──────┐ ┌──────▼────────────┐
+                  │  Browse the    │ │  Visit the camp    │
+                  │  shop           │ │  (via API/docs)    │
+                  └────────┬──────┘ └──────┬────────────┘
+                           │               │
+                           ▼               ▼
+              ┌───────────────────┐ ┌───────────────────────┐
+              │  Filter by theme   │ │  Gather wood, stone,   │
+              │  or category        │ │  or cloth (cooldowns  │
+              │  Click item to      │ │  apply per resource)  │
+              │  preview             │ └──────────┬────────────┘
+              └─────────┬───────────┘             │
+                        │                          ▼
+                        ▼                ┌───────────────────────┐
+              ┌───────────────────┐      │  Enough resources?     │
+              │  Click "Buy"        │      └──┬──────────────┬───┘
+              │  (needs enough      │       YES│              │NO
+              │   coins)             │         ▼              ▼
+              └─────────┬───────────┘  ┌──────────────┐ ┌──────────────┐
+                        │              │  Upgrade camp │ │ Keep         │
+                        ▼              │  level         │ │ gathering    │
+              ┌───────────────────┐    └──────────────┘ └──────────────┘
+              │  Item marked        │
+              │  "Owned", coins      │
+              │  balance updates     │
+              └───────────────────┘
+
+  ──────────────────────────────────────────────────────────────────
+  THEME PICKER  (click the icon, top-right of header)
+  ──────────────────────────────────────────────────────────────────
+  Cozy Day       → light, sky-blue palette
+  Starlight Night → deep indigo, night-sky palette
+  Pirate Camp     → warm amber, sandy palette
+  Choice is saved to your browser and persists across visits.
+  ──────────────────────────────────────────────────────────────────
+  TIPS
+  ──────────────────────────────────────────────────────────────────
+  • New players start with 1000 coins automatically
+  • Each resource node has its own cooldown — rotate between them
+  • Camp upgrade costs increase each level, but so does gather yield
+  • Check /docs on the backend for the full interactive API reference
+  ──────────────────────────────────────────────────────────────────
+```
+
+---
+
+## Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Kaweri05/VILLAGEVERSE-cozy-island.git
+cd VILLAGEVERSE-cozy-island
+
+# 2. Backend setup
+cd backend/villageverse-backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+# → runs at http://127.0.0.1:8000
+# → interactive docs at http://127.0.0.1:8000/docs
+
+# 3. Frontend setup (in a second terminal)
+cd frontend
+npm install
+npm run dev
+# → runs at http://localhost:3000
+```
+
+Keep both terminals running at the same time — the frontend calls the backend directly over HTTP.
+
+---
+
+## Environment Variables
+
+Backend `.env` (in `backend/villageverse-backend/`):
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | `sqlite+aiosqlite:///./villageverse.db` locally, or a Postgres connection string in production |
+| `DATABASE_ECHO` | No | `true` to log all SQL statements |
+| `JWT_SECRET` | Yes | Secret key for future auth work |
+| `JWT_ALGORITHM` | No | Defaults to `HS256` |
+| `JWT_EXPIRE_MINUTES` | No | Defaults to `60` |
+
+In Vercel, set `DATABASE_URL` under **Project Settings → Environment Variables** to your hosted Postgres (Neon/Supabase) connection string, using the `postgresql+asyncpg://` prefix.
+
+---
+
+## Project Structure
 
 See `structure.txt` for the full file tree.
 
 ```
 VillageVerse/
-├── frontend/          # Next.js app
+├── frontend/                  # Next.js app
 ├── backend/
-│   └── villageverse-backend/
-│       └── app/       # FastAPI application
-├── vercel.json        # Multi-service deployment config
-└── docker-compose.yml # Local Postgres + backend container setup
+│   └── villageverse-backend/  # FastAPI application
+├── vercel.json                # Multi-service deployment config
+└── docker-compose.yml         # Local Postgres + backend container setup
 ```
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-See `node.txt` for Node.js/npm version requirements. Python 3.10+ is required for the backend.
+## Tech Stack
 
-### 1. Backend setup
-```bash
-cd backend/villageverse-backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-Runs at `http://127.0.0.1:8000` — interactive API docs at `http://127.0.0.1:8000/docs`.
+| Layer | Technology |
+|---|---|
+| **Frontend** | Next.js 14, React 18, TypeScript, Tailwind CSS, Framer Motion |
+| **Backend** | Python 3.10+, FastAPI, SlowAPI (rate limiting) |
+| **ORM / DB** | SQLAlchemy (async), PostgreSQL (prod) / SQLite (dev) |
+| **Config** | Pydantic Settings |
+| **Deployment** | Vercel (Services: frontend + backend), Neon/Supabase Postgres |
+| **Version Control** | Git + GitHub |
 
-### 2. Frontend setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Runs at `http://localhost:3000`.
+---
 
-**Run both at once** — keep two terminals open, one per server; the frontend calls the backend directly over HTTP.
+## Contributing
 
-## 🎮 How to Use
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
 
-- **Shop** (`/shop`): browse the item catalog, filter by category or theme (day/night/pirate), click an item to preview it, and hit **Buy** to spend real coins tracked server-side.
-- **Camp mechanics** (via API, `/api/game/camp/*`): gather wood/stone/cloth from resource nodes (each has a respawn cooldown), then spend resources to upgrade your camp level.
-- **Daily rewards** (via API, `/api/game/daily-reward/*`): claim once per day; the coin payout grows with your login streak.
-- **Theme picker**: click the icon in the top-right of the header to switch between Cozy Day, Starlight Night, and Pirate Camp — your choice is remembered on your browser.
-- **Admin / Quests / Inventory**: static preview pages, ready to be wired up to their own backend routes next.
+---
 
-## 📜 License
+## License
 
-MIT License. This is an original educational/portfolio project inspired by the cozy life-simulation genre. It is not affiliated with or endorsed by Nintendo or any other game publisher.
+This project is licensed under the MIT License. It is an original educational/portfolio project inspired by the cozy life-simulation genre and is not affiliated with or endorsed by Nintendo or any other game publisher.
 
-## 👩‍💻 Author
+---
 
-**Kaweri Harinkhede**
+<p align="center">Made with 🏝️ by Kaweri Harinkhede</p>
