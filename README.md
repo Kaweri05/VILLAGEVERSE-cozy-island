@@ -13,7 +13,7 @@
 🔗 Live Demo
 
 
-**[https://villageverse-cozy-island.vercel.app/](Live Demo )**
+**[live demo]([Live Demo ](https://villageverse-cozy-island.vercel.app/))**
 ---
 
 ## 📋 Table of Contents
