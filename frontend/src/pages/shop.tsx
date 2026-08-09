@@ -5,7 +5,8 @@ import SectionCard from "../components/SectionCard";
 import { categories } from "../data/mockData";
 import { useTheme, ThemeName, themes } from "../context/ThemeContext";
 
-const API_BASE = "http://127.0.0.1:8000/api/game/shop";
+const API_ROOT = process.env.NEXT_PUBLIC_API_BASE || "";
+const API_BASE = `${API_ROOT}/api/game/shop`;
 
 // Placeholder until real auth exists — stored per-browser so purchases persist for you locally.
 function getUsername() {
