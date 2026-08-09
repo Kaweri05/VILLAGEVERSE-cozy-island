@@ -6,8 +6,7 @@
     },
     "backend": {
       "root": "backend/villageverse-backend",
-      "framework": "fastapi",
-      "entrypoint": "app/main.py"
+      "framework": "fastapi"
     }
   },
   "rewrites": [
