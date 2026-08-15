@@ -75,3 +75,15 @@ class PlayerQuest(Base):
     status: Mapped[str] = mapped_column(String(20), default="not_started")  # not_started | in_progress | completed
     started_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
     completed_at: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
+    
+    
+    # Add this class to the bottom of app/models/game_models.py
+
+class PlayerCompanion(Base):
+    """The player's currently equipped companion, giving a passive bonus."""
+
+    __tablename__ = "player_companions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), unique=True)
+    companion_id: Mapped[int] = mapped_column(Integer)
