@@ -59,3 +59,19 @@ class PlayerInventoryItem(Base):
     item_id: Mapped[int] = mapped_column(Integer)
     quantity: Mapped[int] = mapped_column(Integer, default=1)
     purchased_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
+
+# Add this class to the bottom of app/models/game_models.py
+# (the imports at the top already include everything needed:
+#  String, Integer, DateTime, ForeignKey, JSON, Mapped, mapped_column, relationship)
+
+class PlayerQuest(Base):
+    """Tracks each player's progress on a quest."""
+
+    __tablename__ = "player_quests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"))
+    quest_id: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="not_started")  # not_started | in_progress | completed
+    started_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
+    completed_at: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
