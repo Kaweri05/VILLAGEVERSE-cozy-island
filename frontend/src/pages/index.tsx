@@ -1,12 +1,47 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import FeatureCard from "../components/FeatureCard";
 import IslandScene from "../components/IslandScene";
 import SectionCard from "../components/SectionCard";
 import { dailyRewards, featureCards, shopItems, villagers } from "../data/mockData";
 
+const API_ROOT = process.env.NEXT_PUBLIC_API_BASE || "";
+
+type EventInfo = {
+  active: boolean;
+  name: string | null;
+  emoji: string | null;
+  multiplier: number;
+  flavor: string;
+  minutes_left?: number;
+  minutes_until_next?: number;
+};
+
+function formatMinutes(mins: number) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 export default function Home() {
+  const [event, setEvent] = useState<EventInfo | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`${API_ROOT}/api/game/events/current`);
+        setEvent(await res.json());
+      } catch {
+        setEvent(null);
+      }
+    };
+    load();
+    const interval = setInterval(load, 15000); // refresh every 15s
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       <Head>
@@ -69,16 +104,44 @@ export default function Home() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Seasonal event" subtitle="The moonlight market is opening soon">
-          <div className="rounded-[1.5rem] bg-gradient-to-br from-amber-200 via-orange-100 to-pink-200 p-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-700">Tonight only</p>
-            <h3 className="mt-3 text-2xl font-semibold text-slate-800">Starlight market</h3>
-            <p className="mt-2 text-sm text-slate-700">Exclusive lanterns, rare flowers, and warm music drift through the island plaza.</p>
-            <div className="mt-4 flex items-center gap-3 text-sm text-slate-700">
-              <span className="rounded-full bg-white/70 px-3 py-1">⏳ 03:42:11</span>
-              <span className="rounded-full bg-white/70 px-3 py-1">🌙 Live ambience</span>
+        <SectionCard title="Seasonal event" subtitle="Live status, updates automatically">
+          {event?.active ? (
+            <div className="rounded-[1.5rem] bg-gradient-to-br from-amber-200 via-orange-100 to-pink-200 p-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-700">Happening now</p>
+              <h3 className="mt-3 text-2xl font-semibold text-slate-800">
+                {event.emoji} {event.name}
+              </h3>
+              <p className="mt-2 text-sm text-slate-700">{event.flavor}</p>
+              <div className="mt-4 flex items-center gap-3 text-sm text-slate-700">
+                <span className="rounded-full bg-white/70 px-3 py-1">
+                  ⏳ {event.minutes_left} min left
+                </span>
+                <span className="rounded-full bg-white/70 px-3 py-1">
+                  x{event.multiplier} quest rewards
+                </span>
+              </div>
+              <Link href="/quests" className="mt-4 inline-block rounded-full bg-slate-800 px-4 py-2 text-xs font-semibold text-white">
+                Go claim a quest →
+              </Link>
             </div>
-          </div>
+          ) : event ? (
+            <div className="rounded-[1.5rem] bg-gradient-to-br from-sky-100 via-cyan-50 to-emerald-100 p-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-700">Next event soon</p>
+              <h3 className="mt-3 text-2xl font-semibold text-slate-800">🍀 Lucky Hour</h3>
+              <p className="mt-2 text-sm text-slate-700">
+                Quest rewards double during Lucky Hour — recurring every 4 hours.
+              </p>
+              <div className="mt-4 flex items-center gap-3 text-sm text-slate-700">
+                <span className="rounded-full bg-white/70 px-3 py-1">
+                  ⏳ Starts in {event.minutes_until_next ? formatMinutes(event.minutes_until_next) : "…"}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-[1.5rem] bg-slate-100 p-5">
+              <p className="text-sm text-slate-500">Could not load live event status.</p>
+            </div>
+          )}
         </SectionCard>
       </section>
 
