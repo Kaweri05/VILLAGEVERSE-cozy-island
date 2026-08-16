@@ -20,25 +20,14 @@ type Quest = {
   id: number;
   title: string;
   detail: string;
-  entry_cost: number;
   reward_coins: number;
   duration_seconds: number;
   state: "not_started" | "in_progress" | "ready_to_claim" | "completed";
   seconds_left: number | null;
 };
-type EventInfo = {
-  active: boolean;
-  name: string | null;
-  emoji: string | null;
-  multiplier: number;
-  flavor: string;
-  minutes_left?: number;
-  minutes_until_next?: number;
-};
 
 export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([]);
-  const [event, setEvent] = useState<EventInfo | null>(null);
   const [coins, setCoins] = useState<number | null>(null);
   const [status, setStatus] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -50,7 +39,6 @@ export default function QuestsPage() {
       const data = await res.json();
       setQuests(data.quests);
       setCoins(data.coins);
-      setEvent(data.event);
     } catch {
       setStatus("Could not reach the backend.");
     }
@@ -58,24 +46,19 @@ export default function QuestsPage() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 3000);
+    const interval = setInterval(load, 3000); // refresh countdowns every 3s
     return () => clearInterval(interval);
   }, [username]);
 
-  const handleStart = async (q: Quest) => {
-    if (coins !== null && coins < q.entry_cost) {
-      setStatus(`Not enough coins — need ${q.entry_cost - coins} more to start "${q.title}".`);
-      return;
-    }
-    setBusyId(q.id);
+  const handleStart = async (id: number) => {
+    setBusyId(id);
     try {
-      const res = await fetch(`${API_BASE}/start?username=${username}&quest_id=${q.id}`, { method: "POST" });
+      const res = await fetch(`${API_BASE}/start?username=${username}&quest_id=${id}`, { method: "POST" });
       if (!res.ok) {
         const err = await res.json();
-        setStatus(typeof err.detail === "string" ? err.detail : err.detail?.message ?? "Could not start quest.");
+        setStatus(typeof err.detail === "string" ? err.detail : "Could not start quest.");
       } else {
-        const data = await res.json();
-        setStatus(`Quest started! ${data.coins_spent} coins spent.`);
+        setStatus("Quest started!");
         await load();
       }
     } catch {
@@ -94,9 +77,7 @@ export default function QuestsPage() {
         setStatus(typeof err.detail === "string" ? err.detail : "Could not claim quest.");
       } else {
         const data = await res.json();
-        setStatus(
-          `Quest complete! +${data.coins_awarded} coins${data.lucky_hour_active ? " (Lucky Hour bonus!)" : ""}.`
-        );
+        setStatus(`Quest complete! +${data.coins_awarded} coins.`);
         await load();
       }
     } catch {
@@ -110,11 +91,11 @@ export default function QuestsPage() {
     if (q.state === "not_started") {
       return (
         <button
-          onClick={() => handleStart(q)}
+          onClick={() => handleStart(q.id)}
           disabled={busyId === q.id}
           className="rounded-full bg-sky-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {busyId === q.id ? "Starting…" : `Start (−${q.entry_cost})`}
+          {busyId === q.id ? "Starting…" : "Start"}
         </button>
       );
     }
@@ -132,7 +113,7 @@ export default function QuestsPage() {
           disabled={busyId === q.id}
           className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {busyId === q.id ? "Claiming…" : `Claim (+${q.reward_coins}${event?.active ? ` x${event.multiplier}` : ""})`}
+          {busyId === q.id ? "Claiming…" : "Claim reward"}
         </button>
       );
     }
@@ -155,25 +136,12 @@ export default function QuestsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Daily adventures</p>
-              <h1 className="mt-2 text-3xl font-semibold text-slate-800">Spend coins to start a quest, earn more when you finish.</h1>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-800">A gentle set of quests keeps your island feeling alive.</h1>
             </div>
             <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
               💰 {coins === null ? "…" : coins.toLocaleString()} coins
             </div>
           </div>
-
-          {event?.active && (
-            <div className="mt-4 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-100 to-emerald-100 p-4">
-              <span className="text-3xl">{event.emoji}</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  {event.name} is active — quest rewards x{event.multiplier}!
-                </p>
-                <p className="text-xs text-slate-500">{event.minutes_left} minutes left</p>
-              </div>
-            </div>
-          )}
-
           {status && <p className="mt-3 text-sm font-medium text-amber-700">{status}</p>}
         </motion.section>
 
@@ -184,11 +152,11 @@ export default function QuestsPage() {
                 <div>
                   <p className="font-semibold text-slate-800">{quest.title}</p>
                   <p className="mt-1 text-sm text-slate-500">{quest.detail}</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Cost {quest.entry_cost} coins to start · rewards {quest.reward_coins} coins on completion
-                  </p>
                 </div>
-                <div className="flex items-center gap-3">{buttonFor(quest)}</div>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-white px-3 py-1 text-sm text-slate-600">{quest.reward_coins} coins</span>
+                  {buttonFor(quest)}
+                </div>
               </div>
             ))}
           </div>
